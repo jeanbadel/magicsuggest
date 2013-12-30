@@ -30,6 +30,13 @@
             allowFreeEntries: true,
 
             /**
+             * @cfg {Boolean} allowFullFreeEntries
+             * <p>Need allowFreeEntries =  true. Allow add entries even if not in data selection</p>
+             * Defaults to <code>false</code>.
+             */
+            allowFullFreeEntries: false,
+
+            /**
              * @cfg {String} cls
              * <p>A custom CSS class to apply to the field's underlying element.</p>
              * Defaults to <code>''</code>.
@@ -182,6 +189,13 @@
              * Defaults to <code>false</code>.
              */
             matchCase: false,
+
+            /**
+             * @cfg (function) matchSetValue
+             * <p>A function used to define available value. Function return new value or false if not available value</p>
+             * Defaults to <code>null</code>.
+             */
+            matchSetValue: null,
 
             /**
              * @cfg {Integer} maxDropHeight (in px)
@@ -351,6 +365,13 @@
             sortOrder: null,
 
             /**
+             * @cfg {Boolean} showAlwaysEmptyText
+             * <p>Show always empty text during seizure</p>
+             * Defaults to <code>false</code>.
+             */
+            showAlwaysEmptyText: false,
+
+            /**
              * @cfg {Boolean} strictSuggest
              * <p>If set to true, suggestions will have to start by user input (and not simply contain it as a substring)</p>
              * Defaults to <code>false</code>.
@@ -453,9 +474,11 @@
                 if (!$.isArray(items)) {
                     items = [items];
                 }
+
                 var valuechanged = false;
                 $.each(items, function(index, json) {
-                    if ($.inArray(json[cfg.valueField], ms.getValue()) === -1) {
+                	console.log(json);
+                    if ($.inArray(json[cfg.valueField], ms.getValue()) === -1 || cfg.allowFullFreeEntries === true) {
                         _selection.push(json);
                         valuechanged = true;
                     }
@@ -1173,7 +1196,7 @@
                     ms.container.addClass('ms-ctn-invalid');
                 }
 
-                if(ms.input.val() === '' && _selection.length === 0) {
+                if(ms.input.val() === '' && (_selection.length === 0 || cfg.showAlwaysEmptyText === true)) {
                     ms.input.addClass(cfg.emptyTextCls);
                     ms.input.val(cfg.emptyText);
                 }
@@ -1355,10 +1378,13 @@
                         }
                         // if no selection or if freetext entered and free entries allowed, add new obj to selection
                         if(inputValid === true && cfg.allowFreeEntries === true) {
-                            obj[cfg.displayField] = obj[cfg.valueField] = freeInput;
-                            ms.addToSelection(obj);
-                            ms.collapse(); // reset combo suggestions
-                            ms.input.focus();
+                        	var freeInput = cfg.matchSetValue !== null ? cfg.matchSetValue.call(this, freeInput) : freeInput;
+                        	if(freeInput !== false){
+                            	obj[cfg.displayField] = obj[cfg.valueField] = freeInput;
+                            	ms.addToSelection(obj);
+                            	ms.collapse(); // reset combo suggestions
+                            	ms.input.focus();
+                        	}
                         }
                         break;
                     }
